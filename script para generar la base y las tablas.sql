@@ -1,17 +1,3 @@
--- Database: TareaObjetoRelacion
-
--- DROP DATABASE "TareaObjetoRelacion";
-
-CREATE DATABASE "TareaObjetoRelacion"
-    WITH 
-    OWNER = postgres
-    ENCODING = 'UTF8'
-    LC_COLLATE = 'Spanish_Costa Rica.1252'
-    LC_CTYPE = 'Spanish_Costa Rica.1252'
-    TABLESPACE = pg_default
-    CONNECTION LIMIT = -1;
-	
-
 CREATE TABLE TipoCambios(
 	Id SERIAL PRIMARY KEY,
 	Nombre VARCHAR(64) NOT NULL
@@ -70,8 +56,10 @@ CREATE TABLE ProductoXInventario(
 	Id SERIAL PRIMARY KEY,
 	IdInventario INT REFERENCES Inventario(Id) NOT NULL,
 	IdProducto INT REFERENCES MedioTransporte(Id) NOT NULL,
-	Vendido BIT NOT NULL
+	Vendido BOOLEAN NOT NULL,
+	Activo BOOLEAN NOT NULL
 );
+
 
 CREATE TABLE Cliente(
 	Id SERIAL PRIMARY KEY,
@@ -79,8 +67,9 @@ CREATE TABLE Cliente(
 	Apellido VARCHAR(64) NOT NULL,
 	Cedula VARCHAR(64) NOT NULL,
 	FechaNacimiento DATE NOT NULL,
-	Activo BIT NOT NULL
+	Activo BOOLEAN NOT NULL
 );
+
 
 CREATE TABLE ClienteVIP(
 	PRIMARY KEY(Id),
@@ -111,8 +100,9 @@ CREATE TABLE Factura(
 	Id SERIAL PRIMARY KEY,
 	IdCliente INT REFERENCES Cliente(Id) NOT NULL,
 	FechaCompra DATE NOT NULL,
-	Activo BIT NOT NULL
+	Activo BOOLEAN NOT NULL
 );
+
 
 CREATE TABLE ProductoXFactura(
 	Id SERIAL PRIMARY KEY,
