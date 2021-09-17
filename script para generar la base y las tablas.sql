@@ -6,12 +6,10 @@ CREATE DATABASE "TiendaMediosTransporte"
     WITH 
     OWNER = postgres
     ENCODING = 'UTF8'
-    LC_COLLATE = 'Spanish_Costa Rica.1252'
-    LC_CTYPE = 'Spanish_Costa Rica.1252'
+    LC_COLLATE = 'English_United States.1252'
+    LC_CTYPE = 'English_United States.1252'
     TABLESPACE = pg_default
     CONNECTION LIMIT = -1;
-
-
 
 
 --Tablas para productos
@@ -81,33 +79,25 @@ CREATE TABLE Cliente(
 	Apellido VARCHAR(64) NOT NULL,
 	Cedula VARCHAR(64) NOT NULL,
 	FechaNacimiento DATE NOT NULL,
-	Activo BOOLEAN NOT NULL
+	Activo BOOLEAN NOT NULL,
+	esVIP BOOLEAN NOT NULL,
+	Gustos TEXT []
 );
 
---Tabla para los clientes VIP (Revisar)
-CREATE TABLE ClienteVIP(
-	PRIMARY KEY(Id),
-	Gustos TEXT []
-)INHERITS (Cliente);
 
 --Tabla para registrar los regalos, el cliente y su fecha
 CREATE TABLE Regalo(
 	Id SERIAL PRIMARY KEY,
-	IdCliente INT REFERENCES ClienteVIP(Id) NOT NULL,
-	Fecha DATE NOT NULL
+	Nombre VARCHAR(64) NOT NULL,
+	Activo BOOLEAN
 );
 
---Tabla de Item, para los items que se regalan a los VIP
-CREATE TABLE Item(
-	Id SERIAL PRIMARY KEY,
-	Nombre VARCHAR(64) NOT NULL
-);
-
---Tabla intermedia, para obsequiar más de un item por regalo (si se desea)
-CREATE TABLE ItemXRegalo(
+--Tabla de todos los regalos que se le han enviado al cliente.
+CREATE TABLE RegaloxCliente(
 	Id SERIAL PRIMARY KEY,
 	IdRegalo INT REFERENCES Regalo(Id) NOT NULL,
-	IdItem INT REFERENCES Item(Id) NOT NULL
+	IdCliente INT REFERENCES Cliente(Id) NOT NULL,
+	FechaCompra DATE NOT NULL
 );
 
 
@@ -118,8 +108,9 @@ CREATE TABLE Factura(
 	Id SERIAL PRIMARY KEY,
 	IdCliente INT REFERENCES Cliente(Id) NOT NULL,
 	FechaCompra DATE NOT NULL,
-	Activo BOOLEAN NOT NULL
+	Activo BOOLEAN NOT NULL,
 );
+
 
 
 --Hay que revisar esta tabla
