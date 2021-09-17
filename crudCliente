@@ -1,0 +1,152 @@
+--CRUD de Clientes, Regalos, Facturas y sus tablas intermedias
+
+
+--INSERTS
+
+--Función para insertar bicicletas
+
+CREATE FUNCTION InsertarCliente(
+	inNombre VARCHAR, 
+	inApellido VARCHAR,
+	inCedula VARCHAR,
+	inFechaNacimiento DATE
+	) 
+RETURNS INT
+AS
+$$
+BEGIN 
+	INSERT INTO Cliente (nombre, apellido, cedula, fechaNacimiento,
+						   activo,esVIP,gustos)
+	VALUES(inNombre, inApellido, inCedula, inFechaNacimiento, TRUE, 
+		   FALSE, '{}');
+	
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+--Funcion para insertar el objeto regalo
+
+CREATE FUNCTION InsertarRegalo(
+	inNombre VARCHAR, 
+	) 
+RETURNS INT
+AS
+$$
+BEGIN 
+	INSERT INTO Regalo (nombre)
+	VALUES(inNombre);
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+
+--Funcion de insertar una factura
+CREATE FUNCTION InsertarFactura(
+	inIdCliente INT
+	) 
+RETURNS INT
+AS
+$$
+BEGIN 
+		IF NOT EXISTS(SELECT Id FROM Cliente WHERE Id = inIdCliente)
+		
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	
+	INSERT INTO Factura (idCliente, fechaCompra, Activo)
+	VALUES(inCliente, current_date, TRUE);
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+
+
+
+
+--FALTA Insert de tabla FacturaXProducto y de RegaloxCliente
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--Funcion para eliminar clientes
+CREATE FUNCTION EliminarCliente(inIdCliente INT)
+RETURNS INT 
+AS 
+$$
+BEGIN
+	--Consulta si el id del cliente ingresado, si exista en el inventario
+	IF NOT EXISTS(SELECT Id FROM Cliente WHERE Id = inIdCliente)
+		
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	
+	--Se realiza un borrado lógico del producto, cambio el estado del campo activo
+	UPDATE Cliente
+	SET Activo = FALSE
+	WHERE Id = inIdPCliente;
+	
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+
+--Funcion para eliminar clientes
+CREATE FUNCTION EliminarRegalo(inIdRegalo INT)
+RETURNS INT 
+AS 
+$$
+BEGIN
+	--Consulta si el id del regalo ingresado, si exista en el inventario
+	IF NOT EXISTS(SELECT Id FROM Regalo WHERE Id = inIdRegalo)
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	--Se realiza un borrado lógico del producto, cambio el estado del campo activo
+	UPDATE Regalo
+	SET Activo = FALSE
+	WHERE Id = inIdRegalo;
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+
+--Funcion para eliminar clientes
+CREATE FUNCTION EliminarFactura(inIdFactura INT)
+RETURNS INT 
+AS 
+$$
+BEGIN
+	--Consulta si el id del cliente ingresado, si exista en el inventario
+	IF NOT EXISTS(SELECT Id FROM Factura WHERE Id = inIdFactura)
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	--Se realiza un borrado lógico del producto, cambio el estado del campo activo
+	UPDATE Factura
+	SET Activo = FALSE
+	WHERE Id = inIdFactura;
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
