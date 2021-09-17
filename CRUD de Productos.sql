@@ -205,8 +205,8 @@ BEGIN
 						B.Activo, B.Marco, B.Horquilla
 				 FROM Bicicleta B
 				 INNER JOIN Marca M ON M.Id = B.IdMarca
-				 WHERE B.ID= COALESCE(inIdProducto,B.Id);	--Permite que se filtre la búsqueda por el IdProducto
-															--Sino se ingresa Id, retorna todas las tuplas
+				 WHERE B.ID= COALESCE(inIdProducto,B.Id) 	--Permite que se filtre la búsqueda por el IdProducto
+				 	   AND B.Activo = TRUE;					--Sino se ingresa Id, retorna todas las tuplas activas
 END
 $$ LANGUAGE plpgsql;
 
@@ -226,8 +226,8 @@ BEGIN
 						H.Activo, H.CantMotores, H.CantHelices
 				 FROM Helicoptero H
 				 INNER JOIN Marca M ON M.Id = H.IdMarca
-				 WHERE H.ID= COALESCE(inIdProducto, H.Id);	--Permite que se filtre la búsqueda por el IdProducto
-															--Sino se ingresa Id, retorna todas las tuplas
+				 WHERE H.ID= COALESCE(inIdProducto, H.Id)	--Permite que se filtre la búsqueda por el IdProducto
+				 	   AND H.Activo = TRUE;					--Sino se ingresa Id, retorna todas las tuplas activas
 END
 $$ LANGUAGE plpgsql;
 
@@ -241,15 +241,15 @@ AS
 $$
 BEGIN
 
-	--Retorna el query de la consulta, procesa el join y lo devuelve por medio de la tabla declarada arriba
+	--Retorna el query de la consulta, procesa los joins y lo devuelve por medio de la tabla declarada arriba
 	RETURN QUERY SELECT M.Id, Ma.Nombre, M.CantidadPasajeros, M.UnidadesEnStock,
 						M.PesoKg, M.TamannoMetros, M.Precio, M.Modelo, M.Anno, M.Color,
 						M.Activo, M.CantMarchas, T.Nombre
 				 FROM Motocicleta M
 				 INNER JOIN Marca Ma ON Ma.Id = M.IdMarca
 				 INNER JOIN TipoCambios T ON T.Id = M.IdTipoCambios
-				 WHERE M.ID= COALESCE(inIdProducto, M.Id);	--Permite que se filtre la búsqueda por el IdProducto
-															--Sino se ingresa Id, retorna todas las tuplas
+				 WHERE M.ID= COALESCE(inIdProducto, M.Id)	--Permite que se filtre la búsqueda por el IdProducto
+				 	   AND M.Activo=TRUE;					--Sino se ingresa Id, retorna todas las tuplas activas															
 END
 $$ LANGUAGE plpgsql;
 
@@ -270,10 +270,209 @@ BEGIN
 				 FROM Automovil A
 				 INNER JOIN Marca M ON M.Id = A.IdMarca
 				 INNER JOIN TipoCambios T ON T.Id = A.IdTipoCambios
-				 WHERE A.ID= COALESCE(inIdProducto, A.Id);	--Permite que se filtre la búsqueda por el IdProducto
-															--Sino se ingresa Id, retorna todas las tuplas
+				 WHERE A.ID= COALESCE(inIdProducto, A.Id)	--Permite que se filtre la búsqueda por el IdProducto
+						AND A.Activo = TRUE;				--Sino se ingresa Id, retorna todas las tuplas activas
 END
 $$ LANGUAGE plpgsql;
 
 
 --Funciones para actualizar los productos
+
+--Función que realiza la actualización de los atributos de los productos 
+--que comparten mediante la tabla padre
+CREATE OR REPLACE FUNCTION ActualizarProductoGeneral(
+	inIdProducto INT,
+	inIdMarca INT DEFAULT NULL,
+	inCantPasajeros INT DEFAULT NULL,
+	inStock INT DEFAULT NULL,
+	inPeso INT DEFAULT NULL,
+	inTamano INT DEFAULT NULL,
+	inPrecio MONEY DEFAULT NULL,
+	inModelo VARCHAR DEFAULT NULL,
+	inAnno DATE DEFAULT NULL,
+	inColor VARCHAR DEFAULT NULL
+	)
+RETURNS INT 
+AS 
+$$
+BEGIN
+	
+	--Consulta si el id del producto ingresado, si exista en el inventario
+	IF NOT EXISTS(SELECT Id FROM MedioTransporte WHERE Id = inIdProducto)
+		
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	
+	--Valida si relamente existe el id de marca entrante
+	IF ((inIdMarca IS NOT NULL) AND NOT EXISTS (SELECT Id FROM Marca
+									WHERE Id = inIdMarca))
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+		
+	
+	--Actualiza los campos con las variables entrantes, cuando son nulos le coloca
+	--el valor que ya tenían anteriormente
+	UPDATE MedioTransporte 
+	SET IdMarca = COALESCE(inIdMarca, IdMarca),
+		CantidadPasajeros = COALESCE(inCantPasajeros, CantidadPasajeros),
+		UnidadesEnStock = COALESCE(inStock, UnidadesEnStock),
+		PesoKg = COALESCE(inPeso, PesoKg),
+		TamannoMetros = COALESCE(inTamano, TamannoMetros),
+		Precio = COALESCE(inPrecio, Precio),
+		Modelo = COALESCE(inModelo, Modelo),
+		Anno = COALESCE(inAnno, Anno),
+		Color = COALESCE(inColor, Color)
+	WHERE Id = inIdProducto
+		  AND Activo = TRUE;
+	
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+--Este es un ejemplo de como llamar a esta función de actualización general
+--SELECT actualizarproductogeneral('3', '1', '23', '12', NULL, '3', '1251000', 'Jet', '2016-07-02', NULL);
+
+
+--Función que se encarga de actualizar los campos propios de la tabla bicicleta
+CREATE OR REPLACE FUNCTION ActualizarBicicleta(
+	inIdBicicleta INT,
+	inNumeroMarco INT DEFAULT NULL,
+	inNumeroHorquilla INT DEFAULT NULL
+	)
+RETURNS INT 
+AS 
+$$
+BEGIN
+	
+	--Consulta si el id del producto ingresado si existe en el inventario
+	IF NOT EXISTS(SELECT Id FROM Bicicleta WHERE Id = inIdBicicleta)
+		
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+			
+	--Actualiza los campos con las variables entrantes, cuando son nulos le coloca
+	--el valor que ya tenían anteriormente
+	UPDATE Bicicleta
+	SET Marco = COALESCE(inNumeroMarco, Marco),
+		Horquilla = COALESCE(inNumeroHorquilla, Horquilla)
+	WHERE Id = inIdBicicleta
+		  AND Activo = TRUE;
+	
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+
+--Función que se encarga de actualizar los campos propios de la tabla helicoptero
+CREATE OR REPLACE FUNCTION ActualizarHelicoptero(
+	inIdHelicoptero INT,
+	inCantMotores INT DEFAULT NULL,
+	inCantHelices INT DEFAULT NULL
+	)
+RETURNS INT 
+AS 
+$$
+BEGIN
+	
+	--Consulta si el id del producto ingresado existe en el inventario
+	IF NOT EXISTS(SELECT Id FROM Helicoptero WHERE Id = inIdHelicoptero)
+		
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+			
+	--Actualiza los campos con las variables entrantes, cuando son nulos le coloca
+	--el valor que ya tenían anteriormente
+	UPDATE Helicoptero
+	SET CantMotores = COALESCE(inCantMotores, CantMotores),
+		CantHelices = COALESCE(inCantHelices, CantHelices)
+	WHERE Id = inIdHelicoptero
+		  AND Activo = TRUE;
+	
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+
+--Función que se encarga de actualizar los campos propios de la tabla automovil
+CREATE OR REPLACE FUNCTION ActualizarAutomovil(
+	inIdAutoMovil INT,
+	inCilindraje INT DEFAULT NULL,
+	inIdTipoCambios INT DEFAULT NULL
+	)
+RETURNS INT 
+AS 
+$$
+BEGIN
+	
+	--Consulta si el id del producto ingresado existe en el inventario
+	IF NOT EXISTS(SELECT Id FROM Automovil WHERE Id = inIdAutoMovil)
+		
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	
+	--Valida si existe la caja de cambios en su tabla catalogo
+	IF ((inIdTipoCambios IS NOT NULL) AND NOT EXISTS (SELECT Id FROM Tipocambios
+									WHERE Id = inIdTipoCambios))
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	
+	--Actualiza los campos con las variables entrantes, cuando son nulos le coloca
+	--el valor que ya tenían anteriormente
+	UPDATE Automovil
+	SET Cilindraje = COALESCE(inCilindraje, Cilindraje),
+		IdTipoCambios = COALESCE(inIdTipoCambios, IdTipoCambios)
+	WHERE Id = inIdAutomovil
+		  AND Activo = TRUE;
+	
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;
+
+
+--Función que se encarga de actualizar los campos propios de la tabla motocicleta
+CREATE OR REPLACE FUNCTION ActualizarMotocicleta(
+	inIdMotocicleta INT,
+	inCantMarchas INT DEFAULT NULL,
+	inIdTipoCambios INT DEFAULT NULL
+	)
+RETURNS INT 
+AS 
+$$
+BEGIN
+	
+	--Consulta si el id del producto ingresado existe en el inventario
+	IF NOT EXISTS(SELECT Id FROM Motocicleta WHERE Id = inIdMotocicleta)
+		
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	
+	--Valida si existe la caja de cambios en su tabla catalogo
+	IF ((inIdTipoCambios IS NOT NULL) AND NOT EXISTS (SELECT Id FROM Tipocambios
+									WHERE Id = inIdTipoCambios))
+		--Retorna código de error
+		THEN RETURN 50005;
+	END IF;
+	
+	--Actualiza los campos con las variables entrantes, cuando son nulos le coloca
+	--el valor que ya tenían anteriormente
+	UPDATE Motocicleta
+	SET CantMarchas = COALESCE(inCantMarchas, CantMarchas),
+		IdTipoCambios = COALESCE(inIdTipoCambios, IdTipoCambios)
+	WHERE Id = inIdMotocicleta
+		  AND Activo = TRUE;
+	
+	--Si todo salió bien, retorna código de éxito
+	RETURN 0;
+END
+$$ LANGUAGE plpgsql;

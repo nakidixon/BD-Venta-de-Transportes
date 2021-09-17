@@ -81,7 +81,7 @@ CREATE TABLE Cliente(
 	FechaNacimiento DATE NOT NULL,
 	Activo BOOLEAN NOT NULL,
 	esVIP BOOLEAN NOT NULL,
-	Gustos TEXT []
+	Gustos TEXT []	--dato complejo para almacenar los gustos de ellos
 );
 
 
@@ -101,22 +101,30 @@ CREATE TABLE RegaloxCliente(
 );
 
 
---Tablas para la facturación
+--Tablas y función para la facturación
+
+--Se crea un nuevo tipo de datos para que almacene los detalles de cada producto en factura
+CREATE TYPE Producto AS(
+IdPdocuto INT,
+Cantidad INT
+)
+
+--Se crea una función que retorne un objeto de tipo Producto
+--recibe por parametros los dos objetos que componene este tipo
+CREATE OR REPLACE FUNCTION generarProducto(inIdProducto INT, inCantidad INT) 
+returns SETOF Producto 
+AS 
+$$
+	--Realiza el select a retornar
+    SELECT inIdProducto, inCantidad
+$$ 
+LANGUAGE SQL;
 
 --Tabla de factura
 CREATE TABLE Factura(
 	Id SERIAL PRIMARY KEY,
 	IdCliente INT REFERENCES Cliente(Id) NOT NULL,
 	FechaCompra DATE NOT NULL,
-	Activo BOOLEAN NOT NULL,
+	Productos Producto[],
+	Activo BOOLEAN NOT NULL
 );
-
-
-
---Hay que revisar esta tabla
---Tabla para llevar un registro de lso productos vendidos
-CREATE TABLE ProductoXFactura(
-	Id SERIAL PRIMARY KEY,
-	IdFactura INT REFERENCES Factura(Id) NOT NULL,
-	--Acá deberían de ir los objetos vendidos (¿como ponerlos?)
-)
