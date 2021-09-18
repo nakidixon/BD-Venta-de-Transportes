@@ -101,30 +101,13 @@ CREATE TABLE RegaloxCliente(
 );
 
 
---Tablas y función para la facturación
-
---Se crea un nuevo tipo de datos para que almacene los detalles de cada producto en factura
-CREATE TYPE Producto AS(
-IdPdocuto INT,
-Cantidad INT
-)
-
---Se crea una función que retorne un objeto de tipo Producto
---recibe por parametros los dos objetos que componene este tipo
-CREATE OR REPLACE FUNCTION generarProducto(inIdProducto INT, inCantidad INT) 
-returns SETOF Producto 
-AS 
-$$
-	--Realiza el select a retornar
-    SELECT inIdProducto, inCantidad
-$$ 
-LANGUAGE SQL;
+--Tabla para la facturación
 
 --Tabla de factura
 CREATE TABLE Factura(
 	Id SERIAL PRIMARY KEY,
 	IdCliente INT REFERENCES Cliente(Id) NOT NULL,
 	FechaCompra DATE NOT NULL,
-	Productos Producto[],
+	Productos INT[][],
 	Activo BOOLEAN NOT NULL
 );
