@@ -161,3 +161,36 @@ BEGIN
 	RETURN 0;
 END
 $$ LANGUAGE plpgsql;
+
+
+--Funcion Read de Cliente
+
+CREATE OR REPLACE FUNCTION ConsultarCliente(inIdCliente INT DEFAULT NULL)
+RETURNS TABLE (Id INT, Nombre VARCHAR, Apellido VARCHAR, Cedula VARCHAR, 
+			   FechaNacimiento DATE, esVIP BOOLEAN, gustos TEXT [])
+AS 
+$$
+BEGIN
+	RETURN QUERY SELECT C.Id, C.Nombre, C.Apellido, C.Cedula,
+						C.FechaNacimiento, C.esVIP, C.gustos
+				 FROM Cliente C
+				 WHERE C.ID= COALESCE(inIdCliente, C.Id)	--Permite que se filtre la búsqueda por el id del producto
+						AND C.Activo = TRUE;				--Sino se ingresa Id, retorna todas las tuplas activas
+END
+$$ LANGUAGE plpgsql;
+
+
+
+--Funcion Read de Regalo
+
+CREATE OR REPLACE FUNCTION ConsultarRegalo(inIdRegalo INT DEFAULT NULL)
+RETURNS TABLE (Id INT, Nombre VARCHAR)
+AS 
+$$
+BEGIN
+	RETURN QUERY SELECT C.Id, C.Nombre
+				 FROM Regalo C
+				 WHERE C.ID= COALESCE(inIdRegalo, C.Id)	--Permite que se filtre la búsqueda por el id del regalo
+						AND C.Activo = TRUE;				--Sino se ingresa Id, retorna todas las tuplas activas
+END
+$$ LANGUAGE plpgsql;
