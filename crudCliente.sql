@@ -1,4 +1,5 @@
--CRUD de Clientes, Regalos, Facturas y sus tablas intermedias
+--CRUD de Clientes, Regalos y sus tablas intermedias
+
 --INSERTS
 
 --Función para insertar Cliente
@@ -22,8 +23,8 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
---Funcion para insertar el objeto regalo
 
+--Funcion para insertar el objeto regalo
 CREATE FUNCTION InsertarRegalo(
 	inNombre VARCHAR
 	) 
@@ -33,13 +34,11 @@ $$
 BEGIN 
 	INSERT INTO Regalo (nombre)
 	VALUES(inNombre);
+	
 	--Si todo salió bien, retorna código de éxito
 	RETURN 0;
 END
 $$ LANGUAGE plpgsql;
-
-
---FALTA Insert de tabla de RegaloxCliente
 
 
 --Funcion para eliminar clientes
@@ -48,17 +47,18 @@ RETURNS INT
 AS 
 $$
 BEGIN
-	--Consulta si el id del cliente ingresado, si exista en el inventario
+
+	--Consulta si existe el cliente en su tabla
 	IF NOT EXISTS(SELECT Id FROM Cliente WHERE Id = inIdCliente)
 		
 		--Retorna código de error
 		THEN RETURN 50005;
 	END IF;
 	
-	--Se realiza un borrado lógico del producto, cambio el estado del campo activo
+	--Se realiza un borrado lógico del cliente, cambio el estado del campo activo
 	UPDATE Cliente
 	SET Activo = FALSE
-	WHERE Id = inIdPCliente;
+	WHERE Id = inIdCliente;
 	
 	--Si todo salió bien, retorna código de éxito
 	RETURN 0;
@@ -72,30 +72,34 @@ RETURNS INT
 AS 
 $$
 BEGIN
-	--Consulta si el id del regalo ingresado, si exista en el inventario
+
+	--Consulta si el id del regalo ingresado existe en el inventario
 	IF NOT EXISTS(SELECT Id FROM Regalo WHERE Id = inIdRegalo)
+		
 		--Retorna código de error
 		THEN RETURN 50005;
 	END IF;
-	--Se realiza un borrado lógico del producto, cambio el estado del campo activo
+	
+	--Se realiza un borrado lógico del regalo, cambio el estado del campo activo
 	UPDATE Regalo
 	SET Activo = FALSE
 	WHERE Id = inIdRegalo;
+
 	--Si todo salió bien, retorna código de éxito
 	RETURN 0;
 END
 $$ LANGUAGE plpgsql;
 
 
---Funcion para actualizar clientes
 
+--Funcion para actualizar clientes
 CREATE OR REPLACE FUNCTION ActualizarCliente(
 	inIdCliente INT,
 	inNombre VARCHAR DEFAULT NULL,
 	inApellido VARCHAR DEFAULT NULL,
 	inCedula VARCHAR DEFAULT NULL,
 	inFechaNacimiento  DATE DEFAULT NULL,
-	inEsVIP BOOL DEFAULT NULL,
+	inEsVIP BOOLEAN DEFAULT NULL,
 	inGustos TEXT [] DEFAULT NULL
 	)
 RETURNS INT 
@@ -103,8 +107,9 @@ AS
 $$
 BEGIN
 	
-	--Consulta si el id del cliente ingresado, si exista en el inventario
+	--Consulta si el id del cliente ingresado existe en la tabla
 	IF NOT EXISTS(SELECT Id FROM Cliente WHERE Id = inIdCliente)
+		
 		--Retorna código de error
 		THEN RETURN 50005;
 	END IF;
@@ -117,7 +122,7 @@ BEGIN
 		Cedula = COALESCE(inCedula, Cedula),
 		FechaNacimiento = COALESCE(inFechaNacimiento, FechaNacimiento),
 		esVIP = COALESCE(inEsVIP, esVIP),
-		gustos = COALESCE(inGustos, Gustos)
+		gustos = gustos || COALESCE(inGustos, gustos)
 	WHERE Id = inIdCliente
 		  AND Activo = TRUE;
 	
@@ -128,8 +133,7 @@ $$ LANGUAGE plpgsql;
 
 
 
---Funcion para actualizar clientes
--Función que se encarga de actualizar los campos propios de la tabla regalo
+--Función que se encarga de actualizar los campos propios de la tabla regalo
 CREATE OR REPLACE FUNCTION ActualizarRegalo(
 	inIdRegalo INT,
 	inNombre VARCHAR DEFAULT NULL
@@ -139,7 +143,7 @@ AS
 $$
 BEGIN
 	
-	--Consulta si el id del regalo ingresado existe en el inventario
+	--Consulta si el id del regalo ingresado existe en la tabla
 	IF NOT EXISTS(SELECT Id FROM Regalo WHERE Id = inIdRegalo)
 		
 		--Retorna código de error
