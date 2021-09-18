@@ -101,7 +101,7 @@ BEGIN
 		SELECT Productos[i][2] FROM Factura WHERE Id = inIdFactura INTO cantidad;
 		
 		--Va sumando el monto con el calculo de precio y la cantidad de unidades y lo guarda en monto
-		SELECT monto +((SELECT Precio FROM MedioTransporte WHERE Id = idproducto)*cantidad) INTO monto;
+		SELECT monto + ((SELECT Precio FROM MedioTransporte WHERE Id = idproducto)*cantidad) INTO monto;
 		
 		--Suma el indice, para cumplir la condicón de parada
 		SELECT  i + 1 INTO i;
